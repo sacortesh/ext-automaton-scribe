@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Automaton Scribe",
+  "version": "0.1.0",
+  "description": "Selenium-IDE-style test recorder. Records user interactions and exports human-readable Markdown test scripts.",
+  "permissions": [
+    "sidePanel",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/index.html"
+  },
+  "action": {
+    "default_title": "Open Automaton Scribe"
+  },
+  "icons": {}
+}
