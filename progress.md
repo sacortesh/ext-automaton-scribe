@@ -65,7 +65,7 @@
 - **TASK 10.2** ✅ — `btnNewFromStopped`: transition to CONFIGURED instead of IDLE
 - **TASK 10.3** ✅ — `btnRecord`: send STOP_RECORDING before injecting (safety net)
 - **TASK 10.4** ✅ — Add `tagName` to step payloads from `recorder.js`
-- **TASK 10.5** — Rewrite `toAlias()` to produce tag-qualified aliases (e.g., `span#type-to-search`)
+- **TASK 10.5** ✅ — Rewrite `toAlias()` to produce tag-qualified aliases (e.g., `span#type-to-search`)
 - **TASK 10.6** — Update `buildElementsDictionary()` to pass step object to new `toAlias()`
 - **TASK 10.7** — Update exporter tests for new alias format
 - **TASK 10.8** — Verify all 3 test suites pass
