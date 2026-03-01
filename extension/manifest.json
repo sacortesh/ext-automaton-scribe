@@ -18,5 +18,9 @@
   "action": {
     "default_title": "Open Automaton Scribe"
   },
-  "icons": {}
+  "icons": {},
+  "host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ]
 }

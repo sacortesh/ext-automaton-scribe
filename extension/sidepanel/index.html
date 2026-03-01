@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automaton Scribe</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <header>
+    <h1>Automaton Scribe</h1>
+    <span id="status-badge" class="badge badge-idle">Idle</span>
+  </header>
+
+  <main>
+    <!-- IDLE state: show create button -->
+    <section id="view-idle" class="view">
+      <p class="hint">Record user interactions and export as Markdown test scripts.</p>
+      <button id="btn-new-test" class="btn btn-primary">Create New Test</button>
+    </section>
+
+    <!-- CONFIGURED state: show name/intention form + record button -->
+    <section id="view-configured" class="view hidden">
+      <div class="form-group">
+        <label for="input-test-name">Test Name</label>
+        <input type="text" id="input-test-name" placeholder="e.g. Login with valid credentials" required>
+      </div>
+      <div class="form-group">
+        <label for="input-intention">Intention</label>
+        <textarea id="input-intention" rows="3" placeholder="Describe what this test verifies..." required></textarea>
+      </div>
+      <div class="form-actions">
+        <button id="btn-cancel" class="btn btn-ghost">Cancel</button>
+        <button id="btn-record" class="btn btn-record" disabled>Record</button>
+      </div>
+    </section>
+
+    <!-- RECORDING state: live step list + controls -->
+    <section id="view-recording" class="view hidden">
+      <div class="recording-indicator">
+        <span class="rec-dot"></span>
+        <span id="rec-label">Recording...</span>
+        <button id="btn-verify-toggle" class="btn btn-verify-toggle" title="Toggle Verify Mode">Verify</button>
+      </div>
+      <ol id="step-list" class="step-list"></ol>
+      <div class="form-actions">
+        <button id="btn-stop" class="btn btn-stop">Stop Recording</button>
+      </div>
+    </section>
+
+    <!-- STOPPED state: review steps + export -->
+    <section id="view-stopped" class="view hidden">
+      <h2 id="stopped-test-name"></h2>
+      <ol id="stopped-step-list" class="step-list"></ol>
+      <div class="form-actions">
+        <button id="btn-new-from-stopped" class="btn btn-ghost">New Test</button>
+        <button id="btn-export" class="btn btn-primary">Export as Markdown</button>
+      </div>
+    </section>
+
+    <!-- Error display -->
+    <div id="error-banner" class="error-banner hidden"></div>
+  </main>
+
+  <script src="../lib/waits.js"></script>
+  <script src="../lib/exporter.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>
