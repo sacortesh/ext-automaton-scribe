@@ -62,8 +62,8 @@
 
 ## Phase 10 — Bug Fix: "New Test" Reset + Descriptive Element Aliases
 - **TASK 10.1** ✅ — `btnNewFromStopped`: send STOP_RECORDING before resetting
-- **TASK 10.2** — `btnNewFromStopped`: transition to CONFIGURED instead of IDLE
-- **TASK 10.3** — `btnRecord`: send STOP_RECORDING before injecting (safety net)
+- **TASK 10.2** ✅ — `btnNewFromStopped`: transition to CONFIGURED instead of IDLE
+- **TASK 10.3** ✅ — `btnRecord`: send STOP_RECORDING before injecting (safety net)
 - **TASK 10.4** — Add `tagName` to step payloads from `recorder.js`
 - **TASK 10.5** — Rewrite `toAlias()` to produce tag-qualified aliases (e.g., `span#type-to-search`)
 - **TASK 10.6** — Update `buildElementsDictionary()` to pass step object to new `toAlias()`
