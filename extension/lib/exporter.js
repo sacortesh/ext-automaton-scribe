@@ -1,15 +1,66 @@
 // lib/exporter.js — Markdown formatter
 
 /**
- * Generate a kebab-case alias from a label string.
+ * Generate a tag-qualified alias from a step object.
+ * Format: <tag><qualifier>-<label> where qualifier comes from selector.
+ * @param {object} step - { tagName, selector, label }
+ * @returns {string}
  */
-function toAlias(label) {
-  return label
+function toAlias(step) {
+  // Support legacy string argument (defensive)
+  if (typeof step === 'string') {
+    return step.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').substring(0, 40);
+  }
+
+  const tag = (step.tagName || '').toLowerCase();
+  const selector = step.selector || '';
+  const label = step.label || '';
+
+  // Extract qualifier from selector
+  let qualifier = '';
+
+  // 1. ID selector: #some-id
+  const idMatch = selector.match(/^#([\w-]+)/);
+  if (idMatch) {
+    qualifier = '#' + idMatch[1];
+  }
+
+  // 2. data-testid / data-test / data-cy / data-qa attribute
+  if (!qualifier) {
+    const dataMatch = selector.match(/\[data-(?:testid|test|cy|qa)="([^"]+)"\]/);
+    if (dataMatch) {
+      qualifier = '.' + dataMatch[1];
+    }
+  }
+
+  // 3. Meaningful class
+  if (!qualifier) {
+    const classMatch = selector.match(/\.([\w-]{2,})/);
+    if (classMatch) {
+      qualifier = '.' + classMatch[1];
+    }
+  }
+
+  // Build alias
+  if (tag && qualifier) {
+    // Tag + qualifier is often descriptive enough on its own
+    const alias = tag + qualifier;
+    return alias.substring(0, 40);
+  }
+
+  // No qualifier — use tag-label
+  const kebabLabel = label
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .trim()
-    .replace(/\s+/g, '-')
-    .substring(0, 30);
+    .replace(/\s+/g, '-');
+
+  if (tag && kebabLabel) {
+    return (tag + '-' + kebabLabel).substring(0, 40);
+  }
+
+  // Fallback
+  return (tag || kebabLabel || 'element').substring(0, 40);
 }
 
 /**
