@@ -275,14 +275,19 @@ btnExport.addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
-btnNewFromStopped.addEventListener('click', () => {
+btnNewFromStopped.addEventListener('click', async () => {
   if (session.steps.length > 0) {
     if (!confirm('You have recorded steps that have not been exported. Start a new test anyway?')) {
       return;
     }
   }
+  await sendToContent('STOP_RECORDING');
   session = { name: '', intention: '', steps: [], recordedAt: null };
-  transition(STATES.IDLE);
+  inputTestName.value = '';
+  inputIntention.value = '';
+  btnRecord.disabled = true;
+  transition(STATES.CONFIGURED);
+  inputTestName.focus();
 });
 
 // --- Incoming messages from content script (via background) ---
