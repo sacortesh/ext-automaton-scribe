@@ -221,6 +221,8 @@ btnRecord.addEventListener('click', async () => {
   };
 
   try {
+    // Safety net: stop any lingering recorder from a previous session
+    await sendToContent('STOP_RECORDING').catch(() => {});
     await injectContentScripts();
     transition(STATES.RECORDING);
     renderSteps(stepList, session.steps, true);
