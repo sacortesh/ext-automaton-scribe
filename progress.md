@@ -66,7 +66,7 @@
 - **TASK 10.3** ✅ — `btnRecord`: send STOP_RECORDING before injecting (safety net)
 - **TASK 10.4** ✅ — Add `tagName` to step payloads from `recorder.js`
 - **TASK 10.5** ✅ — Rewrite `toAlias()` to produce tag-qualified aliases (e.g., `span#type-to-search`)
-- **TASK 10.6** — Update `buildElementsDictionary()` to pass step object to new `toAlias()`
+- **TASK 10.6** ✅ — Update `buildElementsDictionary()` to pass step object to new `toAlias()`
 - **TASK 10.7** — Update exporter tests for new alias format
 - **TASK 10.8** — Verify all 3 test suites pass
 
@@ -74,4 +74,4 @@
 - `node extension/tests/selector.test.js` — 21 passed
 - `node extension/tests/exporter.test.js` — 25 passed
 - `node extension/tests/waits.test.js` — 10 passed
-- Total: 56 tests, all passing
+- Total: 56 tests, 55 passing, 1 expected failure (toAlias truncation test — will be fixed in TASK 10.7)
