@@ -75,7 +75,7 @@ function buildElementsDictionary(steps) {
     if (!step.selector || step.type === 'wait' || step.type === 'scroll' || step.type === 'navigate') continue;
     if (elements.has(step.selector)) continue;
 
-    let baseAlias = toAlias(step.label || step.selector);
+    let baseAlias = toAlias(step);
     if (!baseAlias) baseAlias = 'element';
 
     // Deduplicate alias names
