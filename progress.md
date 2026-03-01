@@ -60,7 +60,7 @@
 - **TASK 9.4** — Unit tests: 55 tests across 3 suites (selector, exporter, waits)
 - **TASK 9.5** — Error handling: restricted URL detection, injection failure banner
 
-## Phase 10 — Bug Fix: "New Test" Reset + Descriptive Element Aliases
+## Phase 10 — Bug Fix: "New Test" Reset + Descriptive Element Aliases ✅
 - **TASK 10.1** ✅ — `btnNewFromStopped`: send STOP_RECORDING before resetting
 - **TASK 10.2** ✅ — `btnNewFromStopped`: transition to CONFIGURED instead of IDLE
 - **TASK 10.3** ✅ — `btnRecord`: send STOP_RECORDING before injecting (safety net)
@@ -68,7 +68,9 @@
 - **TASK 10.5** ✅ — Rewrite `toAlias()` to produce tag-qualified aliases (e.g., `span#type-to-search`)
 - **TASK 10.6** ✅ — Update `buildElementsDictionary()` to pass step object to new `toAlias()`
 - **TASK 10.7** ✅ — Update exporter tests for new alias format (37 tests, all passing)
-- **TASK 10.8** — Verify all 3 test suites pass
+- **TASK 10.8** ✅ — Verify all 3 test suites pass (68/68)
+
+## Phase 10 — Complete ✅
 
 ## Test Results
 - `node extension/tests/selector.test.js` — 21 passed
