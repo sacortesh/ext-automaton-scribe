@@ -75,6 +75,7 @@
         shadowDom: selectorResult.shadowDom,
         textContent,
         value,
+        tagName: el.tagName.toLowerCase(),
         label: getElementLabel(el),
         timestamp: Date.now(),
       });
@@ -91,6 +92,7 @@
       selector: selectorResult.selector,
       confidence: selectorResult.confidence,
       shadowDom: selectorResult.shadowDom,
+      tagName: el.tagName.toLowerCase(),
       label: getElementLabel(el),
       timestamp: Date.now(),
     });
@@ -119,6 +121,7 @@
         confidence: selectorResult.confidence,
         shadowDom: selectorResult.shadowDom,
         value: isPassword ? '••••••••' : el.value,
+        tagName: el.tagName.toLowerCase(),
         label: getElementLabel(el),
         timestamp: Date.now(),
       });
@@ -182,6 +185,7 @@
       selector: selectorResult.selector,
       confidence: selectorResult.confidence,
       shadowDom: selectorResult.shadowDom,
+      tagName: e.target.tagName.toLowerCase(),
       label: getElementLabel(e.target),
       timestamp: Date.now(),
     });
