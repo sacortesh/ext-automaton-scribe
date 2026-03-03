@@ -27,7 +27,7 @@ function toAlias(step) {
 
   // 2. data-testid / data-test / data-cy / data-qa attribute
   if (!qualifier) {
-    const dataMatch = selector.match(/\[data-(?:testid|test|cy|qa)="([^"]+)"\]/);
+    const dataMatch = selector.match(/\[data-(?:testid|test|cy|qa|tag-name)="([^"]+)"\]/);
     if (dataMatch) {
       qualifier = '.' + dataMatch[1];
     }
@@ -41,10 +41,13 @@ function toAlias(step) {
     }
   }
 
+  // iframe prefix
+  const framePrefix = step.isIframe ? `iframe${step.frameId}-` : '';
+
   // Build alias
   if (tag && qualifier) {
     // Tag + qualifier is often descriptive enough on its own
-    const alias = tag + qualifier;
+    const alias = framePrefix + tag + qualifier;
     return alias.substring(0, 40);
   }
 
@@ -56,11 +59,11 @@ function toAlias(step) {
     .replace(/\s+/g, '-');
 
   if (tag && kebabLabel) {
-    return (tag + '-' + kebabLabel).substring(0, 40);
+    return (framePrefix + tag + '-' + kebabLabel).substring(0, 40);
   }
 
   // Fallback
-  return (tag || kebabLabel || 'element').substring(0, 40);
+  return (framePrefix + tag || kebabLabel || 'element').substring(0, 40);
 }
 
 /**
@@ -93,6 +96,8 @@ function buildElementsDictionary(steps) {
       selector: step.selector,
       confidence: step.confidence || 'medium',
       shadowDom: step.shadowDom || false,
+      isIframe: step.isIframe || false,
+      frameId: step.frameId || 0,
     });
   }
 
@@ -122,17 +127,31 @@ function exportToMarkdown(session) {
   const elements = buildElementsDictionary(stepsWithWaits);
 
   if (elements.size > 0) {
+    const hasIframes = Array.from(elements.values()).some(e => e.isIframe);
+    const hasShadowDom = Array.from(elements.values()).some(e => e.shadowDom);
+
     lines.push('## Elements');
     lines.push('');
-    lines.push('| Alias | Description | Selector | Confidence |');
-    lines.push('|-------|-------------|----------|------------|');
 
-    const hasShadowDom = Array.from(elements.values()).some(e => e.shadowDom);
+    if (hasIframes) {
+      lines.push('| Alias | Description | Selector | Confidence | Frame |');
+      lines.push('|-------|-------------|----------|------------|-------|');
+    } else {
+      lines.push('| Alias | Description | Selector | Confidence |');
+      lines.push('|-------|-------------|----------|------------|');
+    }
 
     for (const el of elements.values()) {
       const confLabel = el.confidence === 'low' ? `${el.confidence} ⚠️` : el.confidence;
       const selectorDisplay = `\`${el.selector}\``;
-      lines.push(`| \`${el.alias}\` | ${el.description} | ${selectorDisplay} | ${confLabel} |`);
+      const safeDesc = el.description.replace(/[\n\r]+/g, ' ').replace(/\|/g, '\\|');
+      const row = `| \`${el.alias}\` | ${safeDesc} | ${selectorDisplay} | ${confLabel} |`;
+      if (hasIframes) {
+        const frameLabel = el.isIframe ? `iframe-${el.frameId}` : 'main';
+        lines.push(`${row} ${frameLabel} |`);
+      } else {
+        lines.push(row);
+      }
     }
 
     if (hasShadowDom) {
@@ -146,11 +165,20 @@ function exportToMarkdown(session) {
   }
 
   // --- Steps list ---
+  const hasAnyIframe = stepsWithWaits.some(s => s.isIframe);
   lines.push('## Steps');
   lines.push('');
 
   let stepNum = 1;
+  let currentFrame = 'main';
   for (const step of stepsWithWaits) {
+    if (hasAnyIframe) {
+      const stepFrame = step.isIframe ? `iframe-${step.frameId}` : 'main';
+      if (stepFrame !== currentFrame) {
+        lines.push(`   <!-- Switch to ${stepFrame} -->`);
+        currentFrame = stepFrame;
+      }
+    }
     const line = formatStep(step, elements);
     lines.push(`${stepNum}. ${line}`);
     stepNum++;

@@ -188,6 +188,14 @@ test('uses data-testid when available and unique', () => {
   assert.strictEqual(result.confidence, 'high');
 });
 
+test('uses data-tag-name when available and unique', () => {
+  const el = new MockElement('div', { 'data-tag-name': 'user-card' });
+  registerMock('[data-tag-name="user-card"]', el);
+  const result = runStrategies(el);
+  assert.strictEqual(result.selector, '[data-tag-name="user-card"]');
+  assert.strictEqual(result.confidence, 'high');
+});
+
 test('uses aria-label when available and unique', () => {
   const el = new MockElement('button', { 'aria-label': 'Close dialog' });
   // CSS.escape escapes the space in the value
@@ -224,6 +232,135 @@ test('adds parent context when needed', () => {
   const result = runStrategies(el);
   assert.strictEqual(result.selector, '#login-form button.submit-btn');
   assert.strictEqual(result.confidence, 'medium');
+});
+
+console.log('\nisMeaningfulClass — CSS Modules & styled-components:');
+
+test('returns false for CSS Module hash classes', () => {
+  assert.strictEqual(isMeaningfulClass('Component-module__Name__hHXUL'), false);
+  assert.strictEqual(isMeaningfulClass('styles-module__header__abc123'), false);
+});
+
+test('returns false for styled-components with prefix', () => {
+  assert.strictEqual(isMeaningfulClass('Box-sc-62in7e-0'), false);
+  assert.strictEqual(isMeaningfulClass('Wrapper-sc-abc123-1'), false);
+});
+
+test('still allows meaningful classes with underscores', () => {
+  assert.strictEqual(isMeaningfulClass('my_component'), true);
+  assert.strictEqual(isMeaningfulClass('page-header'), true);
+});
+
+console.log('\nStrategy 3.5 — Scoped descendant:');
+
+test('classless element under ID ancestor → #id tag', () => {
+  const grandparent = new MockElement('div', { id: 'repo-content' });
+  const parent = new MockElement('div', {}, grandparent);
+  const el = new MockElement('pre', {}, parent);
+  grandparent.children = [parent];
+  parent.children = [el];
+  registerMock('#repo-content pre', el);
+  const result = runStrategies(el);
+  assert.strictEqual(result.selector, '#repo-content pre');
+  assert.strictEqual(result.confidence, 'medium');
+});
+
+test('classless element under classed ancestor → ancestor.class tag', () => {
+  const grandparent = new MockElement('div', { classes: ['js-snippet-clipboard'] });
+  const parent = new MockElement('div', {}, grandparent);
+  const el = new MockElement('pre', {}, parent);
+  grandparent.children = [parent];
+  parent.children = [el];
+  registerMock('div.js-snippet-clipboard pre', el);
+  const result = runStrategies(el);
+  assert.strictEqual(result.selector, 'div.js-snippet-clipboard pre');
+  assert.strictEqual(result.confidence, 'medium');
+});
+
+test('classless element needing parent disambiguation → #id parentTag > tag', () => {
+  const grandparent = new MockElement('div', { id: 'content' });
+  const parent = new MockElement('div', {}, grandparent);
+  const el = new MockElement('pre', {}, parent);
+  grandparent.children = [parent];
+  parent.children = [el];
+  // Simple #content pre is NOT unique — needs parent
+  registerMock('#content div > pre', el);
+  const result = runStrategies(el);
+  assert.strictEqual(result.selector, '#content div > pre');
+  assert.strictEqual(result.confidence, 'medium');
+});
+
+test('classless element with nth-of-type disambiguation', () => {
+  const grandparent = new MockElement('div', { id: 'content' });
+  const parent = new MockElement('div', {}, grandparent);
+  const el1 = new MockElement('pre', {}, parent);
+  const el2 = new MockElement('pre', {}, parent);
+  grandparent.children = [parent];
+  parent.children = [el1, el2];
+  // Neither #content pre nor #content div > pre is unique
+  registerMock('#content div > pre:nth-of-type(2)', el2);
+  const result = runStrategies(el2);
+  assert.strictEqual(result.selector, '#content div > pre:nth-of-type(2)');
+  assert.strictEqual(result.confidence, 'medium');
+});
+
+test('scoped strategy uses data-testid ancestor', () => {
+  const grandparent = new MockElement('div', { 'data-testid': 'code-block' });
+  const parent = new MockElement('div', {}, grandparent);
+  const el = new MockElement('pre', {}, parent);
+  grandparent.children = [parent];
+  parent.children = [el];
+  registerMock('[data-testid="code-block"] pre', el);
+  const result = runStrategies(el);
+  assert.strictEqual(result.selector, '[data-testid="code-block"] pre');
+  assert.strictEqual(result.confidence, 'medium');
+});
+
+test('scoped strategy uses landmark ancestor', () => {
+  const article = new MockElement('article', {});
+  const parent = new MockElement('div', {}, article);
+  const el = new MockElement('pre', {}, parent);
+  article.children = [parent];
+  parent.children = [el];
+  registerMock('article pre', el);
+  const result = runStrategies(el);
+  assert.strictEqual(result.selector, 'article pre');
+  assert.strictEqual(result.confidence, 'medium');
+});
+
+console.log('\nStrategy 4 — Enhanced structural (anchor-first):');
+
+test('finds distant ID anchor and uses descendant combinator', () => {
+  // Build a deep chain: #root > div > div > div > div > div > span
+  const root = new MockElement('div', { id: 'root' });
+  let current = root;
+  for (let i = 0; i < 5; i++) {
+    const child = new MockElement('div', {}, current);
+    current.children = [child];
+    current = child;
+  }
+  const target = new MockElement('span', {}, current);
+  current.children = [target];
+  // Only the full descendant works — scoped strategy (3.5) picks it up at medium confidence
+  registerMock('#root span', target);
+  const result = runStrategies(target);
+  assert.strictEqual(result.selector, '#root span');
+  assert.strictEqual(result.confidence, 'medium');
+});
+
+test('structural builds path from anchor when descendant alone is not unique', () => {
+  const root = new MockElement('div', { id: 'app' });
+  const mid = new MockElement('section', {}, root);
+  const parent = new MockElement('div', {}, mid);
+  const el = new MockElement('span', {}, parent);
+  root.children = [mid];
+  mid.children = [parent];
+  parent.children = [el];
+  // #app span not unique, but #app span (path with nth) works
+  registerMock('#app section > div > span', el);
+  const result = runStrategies(el);
+  assert.strictEqual(result.selector, '#app section > div > span');
+  assert.strictEqual(result.confidence, 'low');
 });
 
 console.log('\nShadow DOM detection:');

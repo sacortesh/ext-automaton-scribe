@@ -60,7 +60,7 @@
       e.stopPropagation();
       e.stopImmediatePropagation();
 
-      const el = e.target;
+      const el = e.composedPath()[0] || e.target;
       const selectorResult = getBestSelector(el);
       const textContent = (el.innerText || '').trim().substring(0, 100);
       const value = el.value || null;
@@ -82,7 +82,7 @@
       return;
     }
 
-    const el = e.target;
+    const el = e.composedPath()[0] || e.target;
     if (isDuplicate('click', el)) return;
     trackEvent('click', el);
 
@@ -103,7 +103,7 @@
 
   function onInputChange(e) {
     if (!recording || verifyMode) return;
-    const el = e.target;
+    const el = e.composedPath()[0] || e.target;
     if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;
 
     // Clear existing debounce timer for this element
@@ -175,18 +175,19 @@
   function onKeyDown(e) {
     if (!recording || verifyMode) return;
     if (!CAPTURED_KEYS.includes(e.key)) return;
-    if (isDuplicate('keypress', e.target)) return;
-    trackEvent('keypress', e.target);
+    const el = e.composedPath()[0] || e.target;
+    if (isDuplicate('keypress', el)) return;
+    trackEvent('keypress', el);
 
-    const selectorResult = getBestSelector(e.target);
+    const selectorResult = getBestSelector(el);
     sendEvent({
       type: 'keypress',
       key: e.key,
       selector: selectorResult.selector,
       confidence: selectorResult.confidence,
       shadowDom: selectorResult.shadowDom,
-      tagName: e.target.tagName.toLowerCase(),
-      label: getElementLabel(e.target),
+      tagName: el.tagName.toLowerCase(),
+      label: getElementLabel(el),
       timestamp: Date.now(),
     });
   }
@@ -194,7 +195,7 @@
   // --- Verify mode: hover highlight ---
   function onMouseMoveVerify(e) {
     if (!recording || !verifyMode) return;
-    if (typeof showHighlight === 'function') showHighlight(e.target);
+    if (typeof showHighlight === 'function') showHighlight(e.composedPath()[0] || e.target);
   }
 
   // --- Listener management ---

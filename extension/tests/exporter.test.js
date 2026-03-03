@@ -42,6 +42,11 @@ test('data-cy qualifier: tag.value', () => {
   assert.strictEqual(toAlias(step), 'input.email-input');
 });
 
+test('data-tag-name qualifier: tag.value', () => {
+  const step = { tagName: 'div', selector: '[data-tag-name="user-card"]', label: 'User Card' };
+  assert.strictEqual(toAlias(step), 'div.user-card');
+});
+
 test('class qualifier: tag.class', () => {
   const step = { tagName: 'input', selector: '.email-field', label: 'Email' };
   assert.strictEqual(toAlias(step), 'input.email-field');
@@ -215,6 +220,26 @@ test('formats navigate step', () => {
 // --- exportToMarkdown ---
 console.log('\nexportToMarkdown:');
 
+test('escapes newlines and pipes in description', () => {
+  const session = {
+    name: 'Test',
+    intention: 'Test',
+    steps: [
+      { type: 'click', selector: '#btn', label: "Line1\nLine2", tagName: 'button', confidence: 'high', timestamp: 1000 },
+      { type: 'click', selector: '#col', label: "Has | pipe", tagName: 'span', confidence: 'high', timestamp: 2000 },
+    ],
+    recordedAt: 'now',
+  };
+  const md = exportToMarkdown(session);
+  // Each table row should be a single line — no raw newlines inside cells
+  const tableLines = md.split('\n').filter(l => l.startsWith('| `'));
+  for (const line of tableLines) {
+    assert.ok(!line.includes('\n'), 'Table row should not contain raw newline');
+  }
+  assert.ok(md.includes('Line1 Line2'), 'Newline should be replaced with space');
+  assert.ok(md.includes('\\|'), 'Pipe should be escaped');
+});
+
 test('produces valid markdown with header', () => {
   const session = {
     name: 'Login Test',
@@ -323,6 +348,96 @@ test('class-based alias appears in export steps', () => {
   };
   const md = exportToMarkdown(session);
   assert.ok(md.includes('`input.email-field`'));
+});
+
+// --- iframe support ---
+console.log('\niframe support:');
+
+test('toAlias: iframe step gets prefixed alias', () => {
+  const step = { tagName: 'button', selector: '#submit', label: 'Submit', isIframe: true, frameId: 3 };
+  assert.strictEqual(toAlias(step), 'iframe3-button#submit');
+});
+
+test('toAlias: main frame step has no prefix', () => {
+  const step = { tagName: 'button', selector: '#submit', label: 'Submit', isIframe: false, frameId: 0 };
+  assert.strictEqual(toAlias(step), 'button#submit');
+});
+
+test('toAlias: missing isIframe treated as main frame', () => {
+  const step = { tagName: 'button', selector: '#submit', label: 'Submit' };
+  assert.strictEqual(toAlias(step), 'button#submit');
+});
+
+test('elements table includes Frame column when iframes present', () => {
+  const session = {
+    name: 'Test',
+    intention: 'Test',
+    steps: [
+      { type: 'click', selector: '#btn', label: 'OK', tagName: 'button', confidence: 'high', timestamp: 1000, isIframe: false, frameId: 0 },
+      { type: 'click', selector: '#inner-btn', label: 'Inner', tagName: 'button', confidence: 'high', timestamp: 2000, isIframe: true, frameId: 5 },
+    ],
+    recordedAt: 'now',
+  };
+  const md = exportToMarkdown(session);
+  assert.ok(md.includes('| Frame |'), 'Should have Frame column header');
+  assert.ok(md.includes('main |'), 'Main frame element should show "main"');
+  assert.ok(md.includes('iframe-5 |'), 'Iframe element should show "iframe-5"');
+});
+
+test('elements table omits Frame column when no iframes', () => {
+  const session = {
+    name: 'Test',
+    intention: 'Test',
+    steps: [
+      { type: 'click', selector: '#btn', label: 'OK', tagName: 'button', confidence: 'high', timestamp: 1000 },
+    ],
+    recordedAt: 'now',
+  };
+  const md = exportToMarkdown(session);
+  assert.ok(!md.includes('| Frame |'), 'Should NOT have Frame column header');
+});
+
+test('steps include frame switch comments', () => {
+  const session = {
+    name: 'Test',
+    intention: 'Test',
+    steps: [
+      { type: 'click', selector: '#btn', label: 'OK', tagName: 'button', confidence: 'high', timestamp: 1000, isIframe: false, frameId: 0 },
+      { type: 'click', selector: '#inner-btn', label: 'Inner', tagName: 'button', confidence: 'high', timestamp: 2000, isIframe: true, frameId: 5 },
+      { type: 'click', selector: '#btn', label: 'OK', tagName: 'button', confidence: 'high', timestamp: 3000, isIframe: false, frameId: 0 },
+    ],
+    recordedAt: 'now',
+  };
+  const md = exportToMarkdown(session);
+  assert.ok(md.includes('<!-- Switch to iframe-5 -->'), 'Should have switch-to-iframe comment');
+  assert.ok(md.includes('<!-- Switch to main -->'), 'Should have switch-to-main comment');
+});
+
+test('no frame switch comments when all steps in main frame', () => {
+  const session = {
+    name: 'Test',
+    intention: 'Test',
+    steps: [
+      { type: 'click', selector: '#btn', label: 'OK', tagName: 'button', confidence: 'high', timestamp: 1000 },
+      { type: 'click', selector: '#btn2', label: 'Next', tagName: 'button', confidence: 'high', timestamp: 2000 },
+    ],
+    recordedAt: 'now',
+  };
+  const md = exportToMarkdown(session);
+  assert.ok(!md.includes('<!-- Switch'), 'Should NOT have any switch comments');
+});
+
+test('iframe alias appears in exported steps', () => {
+  const session = {
+    name: 'Test',
+    intention: 'Test',
+    steps: [
+      { type: 'click', selector: '#inner-btn', label: 'Inner', tagName: 'button', confidence: 'high', timestamp: 1000, isIframe: true, frameId: 2 },
+    ],
+    recordedAt: 'now',
+  };
+  const md = exportToMarkdown(session);
+  assert.ok(md.includes('`iframe2-button#inner-btn`'), 'Alias should have iframe prefix');
 });
 
 // --- Summary ---

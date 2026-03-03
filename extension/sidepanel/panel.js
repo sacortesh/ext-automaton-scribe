@@ -160,10 +160,34 @@ async function injectContentScripts() {
       throw new Error('Cannot record on browser internal pages (chrome://, about:, etc.).');
     }
 
+    // Inject into main frame
     await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
+      target: { tabId: tab.id, frameIds: [0] },
       files: ['content/selector.js', 'content/highlighter.js', 'content/recorder.js'],
     });
+
+    // Inject into same-origin child iframes
+    try {
+      const frames = await chrome.webNavigation.getAllFrames({ tabId: tab.id });
+
+      for (const frame of frames) {
+        if (frame.frameId === 0) continue;          // Skip main frame
+        if (frame.parentFrameId !== 0) continue;     // Skip nested iframes
+
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id, frameIds: [frame.frameId] },
+            files: ['content/selector.js', 'content/highlighter.js', 'content/recorder.js'],
+          });
+          console.log(`Injected into iframe (frameId: ${frame.frameId})`);
+        } catch (err) {
+          console.warn(`Could not inject into iframe (frameId: ${frame.frameId}): ${err.message}`);
+        }
+      }
+    } catch (frameErr) {
+      console.warn('Failed to inject into iframes:', frameErr.message);
+    }
+
     return tab.id;
   } catch (err) {
     throw new Error(`Failed to inject recorder: ${err.message}`);
@@ -293,9 +317,14 @@ btnNewFromStopped.addEventListener('click', async () => {
 });
 
 // --- Incoming messages from content script (via background) ---
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message, sender) => {
   if (message.type === 'EVENT_CAPTURED' && state === STATES.RECORDING) {
-    session.steps.push(message.payload);
+    const payload = {
+      ...message.payload,
+      frameId: sender.frameId || 0,
+      isIframe: (sender.frameId || 0) !== 0,
+    };
+    session.steps.push(payload);
     renderSteps(stepList, session.steps, true);
   }
 
